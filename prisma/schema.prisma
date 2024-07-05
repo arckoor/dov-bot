@@ -1,0 +1,36 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+model GuildConfig {
+  id        Int     @id @default(autoincrement())
+  guild     BigInt  @unique
+  guild_log BigInt?
+  time_zone String? @default("UTC")
+
+  @@index([guild])
+}
+
+model PhraseConfig {
+  id               Int              @id @default(autoincrement())
+  guild            BigInt           @unique
+  assigned_phrases AssignedPhrase[]
+
+  @@index([guild])
+}
+
+model AssignedPhrase {
+  id             Int          @id @default(autoincrement())
+  guild          BigInt
+  phrase         String
+  role           BigInt
+  match_case     Boolean      @default(false)
+  PhraseConfig   PhraseConfig @relation(fields: [phraseConfigId], references: [id])
+  phraseConfigId Int
+}
