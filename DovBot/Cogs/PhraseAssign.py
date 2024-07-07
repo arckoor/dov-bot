@@ -5,7 +5,7 @@ from disnake.ext import commands
 from Cogs.BaseCog import BaseCog
 from Database.DBConnector import db, get_phrase_config
 from Views import Embed
-from Util import Logging
+from Util import Logging, Utils
 
 
 class PhraseAssign(BaseCog):
@@ -34,9 +34,12 @@ class PhraseAssign(BaseCog):
         )
 
         for assigned_phrase in phrase_config.assigned_phrases:
+            role = inter.guild.get_role(assigned_phrase.role)
+            if not role:
+                role = Utils.get_alternate_role(assigned_phrase.role)
             embed.add_field(
                 name=f"ID: {assigned_phrase.id} | {assigned_phrase.phrase} | Match case: {assigned_phrase.match_case}",
-                value=inter.guild.get_role(assigned_phrase.role).mention,
+                value=role.mention,
                 inline=False
             )
         await inter.response.send_message(embed=embed)
@@ -68,7 +71,7 @@ class PhraseAssign(BaseCog):
                 }
             },
         )
-        await Logging.guild_log(inter.guild_id, f"A phrase `{phrase}` was added with role {role.name} (`{role.id}`) by {inter.author.name} (`{inter.author.id}`).")
+        await Logging.guild_log(inter.guild_id, f"A phrase `{phrase}` with role {role.name} (`{role.id}`) was added by {inter.author.name} (`{inter.author.id}`).")
         await inter.response.send_message("Phrase added successfully.")
 
     @phrase.sub_command(name="remove", description="Remove a phrase from the list.")
@@ -88,13 +91,15 @@ class PhraseAssign(BaseCog):
             return
 
         role = inter.guild.get_role(assigned_phrase.role)
+        if not role:
+            role = Utils.get_alternate_role(assigned_phrase.role)
 
         await db.assignedphrase.delete(
             where={
                 "id": assigned_phrase.id
             }
         )
-        await Logging.guild_log(inter.guild_id, f"A phrase `{assigned_phrase.phrase}` was removed with role {role.name} (`{role.id}`) by {inter.author.name} (`{inter.author.id}`).")
+        await Logging.guild_log(inter.guild_id, f"A phrase `{assigned_phrase.phrase}` with role {role.name} (`{role.id}`) was removed by {inter.author.name} (`{inter.author.id}`).")
         await inter.response.send_message("Phrase removed successfully.")
 
     @commands.Cog.listener()
@@ -112,9 +117,16 @@ class PhraseAssign(BaseCog):
                 phrase = assigned_phrase.phrase
                 content = message.content
             if phrase in content:
-                await message.author.add_roles(message.guild.get_role(assigned_phrase.role), reason="Phrase assignment.")
+                role = message.guild.get_role(assigned_phrase.role)
+                if role in message.author.roles:
+                    return
+                if not role:
+                    Logging.error(f"Role with ID {assigned_phrase.role} not found in guild {message.guild.id}.")
+                    await Logging.guild_log(message.guild.id, f"Role with ID `{assigned_phrase.role}` not found.")
+                    continue
+                await message.author.add_roles(role, reason="Phrase assignment.")
                 await Logging.guild_log(
-                    message.guild.id, f"Assigned role {message.guild.get_role(assigned_phrase.role).name} to {message.author.name} (`{message.author.id}`) for phrase `{assigned_phrase.phrase}`."
+                    message.guild.id, f"Assigned role {role.name} (`{role.id}`) to {message.author.name} (`{message.author.id}`) for phrase `{assigned_phrase.phrase}`."
                 )
 
 
