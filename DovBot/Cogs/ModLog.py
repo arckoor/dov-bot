@@ -53,7 +53,7 @@ class ModLog(BaseCog):
             buffer.seek(0)
             await inter.response.send_message("I don't know this time zone. See the attached file for all valid values.", file=disnake.File(buffer, filename="time-zones.txt"), ephemeral=True)
             return
-        
+
         _ = await get_guild_config(inter.guild_id)
         await db.guildconfig.update(
             where={
