@@ -12,5 +12,7 @@ RUN chmod +x /usr/local/bin/loader.sh
 
 COPY . .
 
+RUN prisma generate
+
 ENTRYPOINT [ "loader.sh" ]
 CMD [ "python", "DovBot/DovBot.py" ]
