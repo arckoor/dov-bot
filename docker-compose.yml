@@ -1,0 +1,43 @@
+services:
+  bot:
+    image: ghcr.io/arckoor/dov-bot:latest
+    build: .
+    container_name: dov-bot
+    environment:
+      - PYTHONPATH=${PYTHONPATH}
+      - DATABASE_URL=postgresql://dov-bot:${PG_PASSWORD}@db:5432/dov-bot-db
+      - ENV=${ENV}
+    volumes:
+      - ./config/master.json:/DovBot/config/master.json:ro
+      - log-data:/DovBot/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dov-bot-network
+  db:
+    image: postgres:16
+    container_name: dov-bot-db
+    restart: always
+    environment:
+      POSTGRES_USER: dov-bot
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: dov-bot-db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - dov-bot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+networks:
+  dov-bot-network:
+    driver: bridge
+
+volumes:
+  db-data:
+  log-data:

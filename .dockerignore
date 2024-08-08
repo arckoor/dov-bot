@@ -1,0 +1,5 @@
+*
+!requirements.txt
+!DovBot/*
+!prisma/*
+!loader.sh

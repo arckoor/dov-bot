@@ -6,7 +6,7 @@ from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 
 from Cogs.BaseCog import BaseCog
-from Database.DBConnector import db
+from Database.DBConnector import db, get_guild_config
 
 
 class ModLog(BaseCog):
@@ -32,6 +32,7 @@ class ModLog(BaseCog):
         elif not perms.embed_links:
             await inter.response.send_message("I don't have permission to embed links in that channel.", ephemeral=True)
             return
+        _ = await get_guild_config(inter.guild_id)
         await db.guildconfig.update(
             where={
                 "guild": inter.guild_id
@@ -52,7 +53,8 @@ class ModLog(BaseCog):
             buffer.seek(0)
             await inter.response.send_message("I don't know this time zone. See the attached file for all valid values.", file=disnake.File(buffer, filename="time-zones.txt"), ephemeral=True)
             return
-
+        
+        _ = await get_guild_config(inter.guild_id)
         await db.guildconfig.update(
             where={
                 "guild": inter.guild_id
